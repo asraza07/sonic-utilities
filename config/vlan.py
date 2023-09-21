@@ -30,7 +30,8 @@ def set_dhcp_relay_table(table, config_db, vlan_name, value):
 
 
 def is_dhcp_relay_running():
-    out, _ = clicommon.run_command("systemctl show dhcp_relay.service --property ActiveState --value", return_cmd=True)
+    out, _ = clicommon.run_command(["systemctl", "show", "dhcp_relay.service", "--property", "ActiveState", "--value"],
+                                   return_cmd=True)
     return out.strip() == "active"
 
 def is_dhcpv6_relay_config_exist(db, vlan_name):
@@ -176,21 +177,21 @@ def del_vlan(db, vid, multiple, no_restart_dhcp_relay):
                
     vlans = db.cfgdb.get_keys('VLAN')
     if not vlans:
-        docker_exec_cmd = "docker exec -i swss {}"
-        _, rc = clicommon.run_command(docker_exec_cmd.format("supervisorctl status ndppd"), ignore_error=True, return_cmd=True)
+        docker_exec_cmd = ['docker', 'exec', '-i', 'swss']
+        _, rc = clicommon.run_command(docker_exec_cmd + ['supervisorctl', 'status', 'ndppd'], ignore_error=True, return_cmd=True)
         if rc == 0:
             click.echo("No VLANs remaining, stopping ndppd service")
-            clicommon.run_command(docker_exec_cmd.format("supervisorctl stop ndppd"), ignore_error=True, return_cmd=True)
-            clicommon.run_command(docker_exec_cmd.format("rm -f /etc/supervisor/conf.d/ndppd.conf"), ignore_error=True, return_cmd=True)
-            clicommon.run_command(docker_exec_cmd.format("supervisorctl update"), return_cmd=True)
+            clicommon.run_command(docker_exec_cmd + ['supervisorctl', 'stop', 'ndppd'], ignore_error=True, return_cmd=True)
+            clicommon.run_command(docker_exec_cmd + ['rm', '-f', '/etc/supervisor/conf.d/ndppd.conf'], ignore_error=True, return_cmd=True)
+            clicommon.run_command(docker_exec_cmd + ['supervisorctl', 'update'], return_cmd=True)
                 
 
 def restart_ndppd():
     verify_swss_running_cmd = ['docker', 'container', 'inspect', '-f', '{{.State.Status}}', 'swss']
     docker_exec_cmd = ['docker', 'exec', '-i', 'swss']
     ndppd_config_gen_cmd = ['sonic-cfggen', '-d', '-t', '/usr/share/sonic/templates/ndppd.conf.j2,/etc/ndppd.conf']
-    ndppd_restart_cmd =['supervisorctl', 'restart', 'ndppd']
-    ndppd_status_cmd= ["supervisorctl", "status", "ndppd"]
+    ndppd_restart_cmd = ['supervisorctl', 'restart', 'ndppd']
+    ndppd_status_cmd = ["supervisorctl", "status", "ndppd"]
     ndppd_conf_copy_cmd = ['cp', '/usr/share/sonic/templates/ndppd.conf', '/etc/supervisor/conf.d/']
     supervisor_update_cmd = ['supervisorctl', 'update']
 
