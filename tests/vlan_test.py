@@ -244,6 +244,7 @@ test_config_add_del_vlan_and_vlan_member_with_switchport_modes_output = """\
 +-----------+-----------------+-----------------+----------------+-------------+
 |      2000 | 192.168.0.10/21 | Ethernet24      | untagged       | enabled     |
 |           | fc02:1011::1/64 | Ethernet28      | untagged       |             |
+|           |                 | Ethernet20      | untagged       |             |
 +-----------+-----------------+-----------------+----------------+-------------+
 |      3000 |                 |                 |                | disabled    |
 +-----------+-----------------+-----------------+----------------+-------------+
@@ -997,7 +998,7 @@ class TestVlan(object):
         traceback.print_tb(result.exc_info[2])
         assert result.exit_code == 0
 
-        # add Ethernet20 to vlan 1001 as tagged member
+        # add Ethernet20 to vlan 1000 as tagged member
         result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["add"],
                 ["1000", "Ethernet20"], obj=db)
         print(result.exit_code)
@@ -1013,9 +1014,33 @@ class TestVlan(object):
         assert result.exit_code == 0
         assert "Ethernet20 switched from access to trunk mode" in result.output
 
-        # add Ethernet20 to vlan 1001 as tagged member
+        # add Ethernet20 to vlan 1000 as tagged member
         result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["add"],
                 ["1000", "Ethernet20"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        traceback.print_tb(result.exc_info[2])
+        assert result.exit_code == 0
+
+        # add Ethernet20 to vlan 2000 as untagged member
+        result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["add"],
+                ["2000", "Ethernet20", "--untagged"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        traceback.print_tb(result.exc_info[2])
+        assert result.exit_code != 0
+        assert "Ethernet20 is in trunk mode and is already untagged member!" in result.output
+
+        # configure Ethernet20 from trunk to hybrid mode
+        result = runner.invoke(config.config.commands["switchport"].commands["mode"],["hybrid", "Ethernet20"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        assert result.exit_code == 0
+        assert "Ethernet20 switched from trunk to hybrid mode" in result.output
+
+        # add Ethernet20 to vlan 2000 as untagged member
+        result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["add"],
+                ["2000", "Ethernet20", "--untagged"], obj=db)
         print(result.exit_code)
         print(result.output)
         traceback.print_tb(result.exc_info[2])
@@ -1026,35 +1051,35 @@ class TestVlan(object):
         print(result.output)
         assert result.output == test_config_add_del_vlan_and_vlan_member_with_switchport_modes_output
 
-        # configure Ethernet20 from trunk to routed mode
+        # configure Ethernet20 from hybrid to routed mode
         result = runner.invoke(config.config.commands["switchport"].commands["mode"],["routed", "Ethernet20"], obj=db)
         print(result.exit_code)
         print(result.output)
         assert result.exit_code != 0
         assert "Ethernet20 has tagged member(s). \nRemove them to change mode to routed" in result.output
 
-        # remove vlan member
+        # remove tagged vlan member
         result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["del"],
                 ["1000", "Ethernet20"], obj=db)
         print(result.exit_code)
         print(result.output)
         assert result.exit_code == 0
 
-        # configure Ethernet20 from trunk to routed mode
+        # configure Ethernet20 from hybrid to routed mode
         result = runner.invoke(config.config.commands["switchport"].commands["mode"],["routed", "Ethernet20"], obj=db)
         print(result.exit_code)
         print(result.output)
         assert result.exit_code != 0
         assert "Ethernet20 has untagged member. \nRemove it to change mode to routed" in result.output
 
-        # remove vlan member
+        # remove untagged vlan members from VLAN 1001 and 2000
         result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["del"],
-                ["1001", "Ethernet20"], obj=db)
+                ["--multiple", "1001,2000", "Ethernet20"], obj=db)
         print(result.exit_code)
         print(result.output)
         assert result.exit_code == 0
 
-        # configure Ethernet20 from trunk to routed mode
+        # configure Ethernet20 from hybrid to routed mode
         result = runner.invoke(config.config.commands["switchport"].commands["mode"],["routed", "Ethernet20"], obj=db)
         print(result.exit_code)
         print(result.output)
@@ -1116,26 +1141,59 @@ class TestVlan(object):
         traceback.print_tb(result.exc_info[2])
         assert result.exit_code == 0
 
-        # configure Ethernet64 from routed to access mode
+        # configure Ethernet64 from trunk to hybrid mode
+        result = runner.invoke(config.config.commands["switchport"].commands["mode"],["hybrid", "Ethernet64"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        assert result.exit_code == 0
+
+        # add Ethernet64 to vlan 1000 and 2000 as untagged member
+        result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["add"],
+                ["--multiple", "1000,2000", "Ethernet64", "--untagged"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        assert result.exit_code == 0
+
+        # configure Ethernet20 from hybrid to access mode
         result = runner.invoke(config.config.commands["switchport"].commands["mode"],["access", "Ethernet64"], obj=db)
         print(result.exit_code)
         print(result.output)
         assert result.exit_code != 0
-        assert "Ethernet64 is in trunk mode and have tagged member(s).\nRemove tagged member(s) from Ethernet64 to switch to access mode" in result.output
+        assert "Ethernet64 is in hybrid mode and have tagged member(s).\nRemove tagged member(s) from Ethernet64 to switch to access mode" in result.output
 
-        # remove vlan member
+        # remove tagged vlan member from vlan 1001
         result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["del"],
                 ["1001", "Ethernet64"], obj=db)
         print(result.exit_code)
         print(result.output)
         assert result.exit_code == 0
 
-        # configure Ethernet64 from routed to access mode
+        # configure Ethernet20 from hybrid to access mode
+        result = runner.invoke(config.config.commands["switchport"].commands["mode"],["access", "Ethernet64"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        assert result.exit_code != 0
+        assert "Ethernet64 is in hybrid mode and have untagged member.\nRemove untagged member from Ethernet64 to switch to access mode" in result.output
+
+        # remove untagged vlan member from vlan 2000
+        result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["del"],
+                ["2000", "Ethernet64"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        assert result.exit_code == 0
+
+        # configure Ethernet20 from hybrid to access mode
         result = runner.invoke(config.config.commands["switchport"].commands["mode"],["access", "Ethernet64"], obj=db)
         print(result.exit_code)
         print(result.output)
         assert result.exit_code == 0
-        assert "Ethernet64 switched from trunk to access mode" in result.output
+
+        # remove untagged vlan member from vlan 1000
+        result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["del"],
+                ["1000", "Ethernet64"], obj=db)
+        print(result.exit_code)
+        print(result.output)
+        assert result.exit_code == 0
 
         # show output
         result = runner.invoke(show.cli.commands["vlan"].commands["brief"], [], obj=db)
