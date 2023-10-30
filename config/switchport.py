@@ -86,11 +86,17 @@ def switchport_mode(db, type, port):
         if existing_mode == type:
             ctx.fail("{} is already in the {} mode".format(port,type))
         else: 
-            if existing_mode == "access" and type == "trunk":
-                pass
             if existing_mode == "trunk" and type == "access":
                 if clicommon.interface_is_tagged_member(db.cfgdb,port):
                     ctx.fail("{} is in {} mode and have tagged member(s).\nRemove tagged member(s) from {} to switch to {} mode".format(port,existing_mode,port,type))
+            
+            if existing_mode == "hybrid" and (type == "access" or type == "trunk"):
+                if type == "access":
+                    if clicommon.interface_is_tagged_member(db.cfgdb,port):
+                        ctx.fail("{} is in {} mode and have tagged member(s).\nRemove tagged member(s) from {} to switch to {} mode".format(port,existing_mode,port,type))
+                if clicommon.interface_is_untagged_member(db.cfgdb,port,more_than_1 = True):
+                    ctx.fail("{} is in {} mode and have untagged member(s).\nRemove utagged member(s) from {} to switch to {} mode".format(port,existing_mode,port,type))
+            
             if is_port:
                 db.cfgdb.mod_entry("PORT", port, {"mode": "{}".format(type)})
             # if not port then is a port channel
