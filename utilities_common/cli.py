@@ -769,14 +769,23 @@ def json_dump(data):
     )
 
 
-def interface_is_untagged_member(db, interface_name):
+def interface_is_untagged_member(db, interface_name, more_than_1 = False):
     """ Check if interface is already untagged member"""
     vlan_member_table = db.get_table('VLAN_MEMBER')
+
+    untagged_members = 0
 
     for key, val in vlan_member_table.items():
         if(key[1] == interface_name):
             if (val['tagging_mode'] == 'untagged'):
-                return True
+                untagged_members += 1
+    if more_than_1:
+        if (untagged_members > 1):
+            return True
+    else:
+        if (untagged_members > 0):
+            return True
+        
     return False
 
 
