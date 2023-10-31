@@ -24,7 +24,6 @@ def vlan():
     pass
 
 
-
 def set_dhcp_relay_table(table, config_db, vlan_name, value):
     config_db.set_entry(table, vlan_name, value)
 
