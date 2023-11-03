@@ -95,7 +95,7 @@ def switchport_mode(db, type, port):
                     if clicommon.interface_is_tagged_member(db.cfgdb,port):
                         ctx.fail("{} is in {} mode and have tagged member(s).\nRemove tagged member(s) from {} to switch to {} mode".format(port,existing_mode,port,type))
                 if clicommon.interface_is_untagged_member(db.cfgdb,port,more_than_1 = True):
-                    ctx.fail("{} is in {} mode and have untagged member.\nRemove utagged member from {} to switch to {} mode".format(port,existing_mode,port,type))
+                    ctx.fail("{} is in {} mode and have untagged member.\nRemove untagged member from {} to switch to {} mode".format(port,existing_mode,port,type))
             
             if is_port:
                 db.cfgdb.mod_entry("PORT", port, {"mode": "{}".format(type)})
