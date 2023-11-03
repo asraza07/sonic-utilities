@@ -1084,7 +1084,7 @@ class TestVlan(object):
         print(result.exit_code)
         print(result.output)
         assert result.exit_code == 0
-        assert "Ethernet20 switched from trunk to routed mode" in result.output
+        assert "Ethernet20 switched from hybrid to routed mode" in result.output
 
         # add del 1001
         result = runner.invoke(config.config.commands["vlan"].commands["del"], ["1001"], obj=db)
