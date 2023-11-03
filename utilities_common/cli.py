@@ -447,6 +447,7 @@ def get_interface_name_for_display(db ,interface):
 
 def get_interface_untagged_vlan_members(db,interface):
     untagged_vlans = []
+    formatted_untagged_vlans = []
     vlan_member = db.cfgdb.get_table('VLAN_MEMBER')
 
     for member in natsorted(list(vlan_member.keys())):
@@ -454,8 +455,11 @@ def get_interface_untagged_vlan_members(db,interface):
 
         if interface == interface_name and vlan_member[member]['tagging_mode'] == 'untagged':
             untagged_vlans.append(get_vlan_id(interface_vlan))
+    
+    for i in range(len(untagged_vlans)//5+1):
+        formatted_untagged_vlans.append(" ,".join([str(x) for x in untagged_vlans[i*5:(i+1)*5]]))
             
-    return "\n".join(untagged_vlans)
+    return "\n".join(formatted_untagged_vlans)
 
 def get_interface_tagged_vlan_members(db,interface):
     tagged_vlans = []
