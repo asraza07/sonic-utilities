@@ -1173,7 +1173,7 @@ class TestVlan(object):
         print(result.exit_code)
         print(result.output)
         assert result.exit_code != 0
-        assert "Ethernet64 is in hybrid mode and have untagged member.\nRemove untagged member from Ethernet64 to switch to access mode" in result.output
+        assert "Ethernet64 is in hybrid mode and have more than one untagged members.\nRemove untagged members from Ethernet64 to switch to access mode" in result.output
 
         # remove untagged vlan member from vlan 2000
         result = runner.invoke(config.config.commands["vlan"].commands["member"].commands["del"],
